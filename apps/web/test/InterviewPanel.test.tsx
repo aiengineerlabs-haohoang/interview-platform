@@ -93,4 +93,26 @@ describe("InterviewPanel", () => {
     expect(await screen.findByText(/beat 75%/i)).toBeInTheDocument();
     expect(screen.getByText(/12 attempts so far/i)).toBeInTheDocument();
   });
+
+  it("copies a shareable result: the score, the question title and a link straight to the question", async () => {
+    const { user } = setup();
+    // userEvent.setup() installs its own clipboard, so spy on it afterwards.
+    const writeText = vi.spyOn(navigator.clipboard, "writeText");
+    await user.click(screen.getByRole("textbox", { name: /your answer/i }));
+    await user.paste(GOOD);
+    await user.click(screen.getByRole("button", { name: /submit answer/i }));
+    await user.click(await screen.findByRole("button", { name: /share my result/i }));
+    expect(writeText).toHaveBeenCalledTimes(1);
+    const text = (writeText.mock.calls[0] as unknown as [string])[0];
+    expect(text).toContain("100/100");
+    expect(text).toContain(q.title);
+    expect(text).toContain(`/?q=${q.id}`);
+    expect(await screen.findByText(/copied/i)).toBeInTheDocument();
+  });
+
+  it("offers no share button when the candidate gave up, because there is no score to share", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: /show me the answer/i }));
+    expect(screen.queryByRole("button", { name: /share my result/i })).not.toBeInTheDocument();
+  });
 });

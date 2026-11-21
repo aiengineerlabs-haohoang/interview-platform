@@ -1,7 +1,8 @@
 "use client";
 
 import { ROOMS, type Room, type RoomId } from "@tower/shared";
-import { useMemo, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { CameraRig, type Pose } from "./CameraRig";
 import { Character } from "./Character";
@@ -55,6 +56,22 @@ function Door({ room, index, onPick }: { room: Room; index: number; onPick: (id:
         <planeGeometry args={[1.9, 0.6]} />
         <meshBasicMaterial map={plaque} />
       </mesh>
+    </group>
+  );
+}
+
+/** Lets a visitor stroll a little either side of where they stand. Still when the visitor asked for reduced motion. */
+function Drift({ x, z, phase, reduced, children }: { x: number; z: number; phase: number; reduced: boolean; children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((state) => {
+    if (!ref.current || reduced) return;
+    const t = state.clock.elapsedTime;
+    ref.current.position.x = x + Math.sin(t * 0.22 + phase) * 0.7;
+    ref.current.position.z = z + Math.cos(t * 0.17 + phase * 1.3) * 0.5;
+  });
+  return (
+    <group ref={ref} position={[x, 0, z]}>
+      {children}
     </group>
   );
 }
@@ -138,7 +155,11 @@ export function Lobby({
         const roomIndex = ROOMS.findIndex((r) => r.id === v.room);
         const z = roomIndex >= 0 ? doorPlacement(roomIndex).z + 0.8 : -1.5 - hash01(i + 3) * (ROOMS.length * DOOR_SPACING - 2);
         const x = (hash01(i + 40) - 0.5) * 3.2;
-        return <Character key={i} spriteKey={`${v.avatar}/neutral`} height={1.15 + hash01(i + 9) * 0.25} position={[x, 0, z]} opacity={0.5} phase={i} motion={reduced ? 0 : 1} />;
+        return (
+          <Drift key={i} x={x} z={z} phase={i * 1.7} reduced={reduced}>
+            <Character spriteKey={`${v.avatar}/neutral`} height={1.15 + hash01(i + 9) * 0.25} position={[0, 0, 0]} opacity={0.5} phase={i} motion={reduced ? 0 : 1} />
+          </Drift>
+        );
       })}
     </>
   );

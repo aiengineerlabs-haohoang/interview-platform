@@ -51,6 +51,7 @@ export function InterviewPanel({ question, onResult, onExpression, onNext, onLea
   const [community, setCommunity] = useState<AttemptResult | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [listening, setListening] = useState(false);
+  const [shared, setShared] = useState(false);
   const startedAt = useRef(Date.now());
   const recogRef = useRef<{ stop(): void } | null>(null);
   const [canDictate, setCanDictate] = useState(false);
@@ -81,6 +82,18 @@ export function InterviewPanel({ question, onResult, onExpression, onNext, onLea
     setBase(g);
     onExpression(expressionFor(g.verdict));
     setCommunity(await onResult({ questionId: question.id, score: g.score, seconds }));
+  }
+
+  async function shareResult() {
+    if (!shown) return;
+    const text = `I scored ${shown.score}/100 on "${question.title}" in Interview Tower. Can you beat me? ${window.location.origin}/?q=${question.id}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setShared(true);
+      window.setTimeout(() => setShared(false), 2000);
+    } catch {
+      /* clipboard blocked: nothing to do, the score is still on screen */
+    }
   }
 
   function giveUp() {
@@ -231,6 +244,11 @@ export function InterviewPanel({ question, onResult, onExpression, onNext, onLea
             <button type="button" onClick={onNext} className="rounded-full bg-[var(--sun)] px-5 py-2.5 font-semibold text-white">
               Next question
             </button>
+            {shown && (
+              <button type="button" onClick={shareResult} className="rounded-full border border-[var(--line)] px-5 py-2.5 text-[var(--ink-2)] hover:bg-[var(--tint)]">
+                {shared ? "Copied to clipboard" : "Share my result"}
+              </button>
+            )}
             <button type="button" onClick={onLeave} className="rounded-full border border-[var(--line)] px-5 py-2.5 text-[var(--ink-2)] hover:bg-[var(--tint)]">
               Back to the lobby
             </button>

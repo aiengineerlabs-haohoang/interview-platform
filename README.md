@@ -14,7 +14,7 @@ Live: https://interview-tower.hao-hoang.workers.dev
 | | |
 |---|---|
 | The tower | A real-time 3D scene (three.js through react-three-fiber): the building outside, a lobby with one door per floor, an interview room. Characters are billboards of the watercolour art from the Shorts. |
-| The questions | 20 across five floors, each with the trap, the mechanism and a sayable answer. `packages/shared/src/content/`. |
+| The questions | 56 across five floors, each with the trap, the mechanism and a sayable answer. `packages/shared/src/content/` (hand-written core) and `content/more/` (converted from your posts). |
 | The grading | A deterministic keyword rubric. Offline, free, instant, and honest about being blunt: the candidate can tick or untick any point it got wrong. |
 | Presence | Windows light up for people inside; ghost animals walk the lobby. One D1 table, a 20 s heartbeat. |
 | Daily question | Same for everyone each UTC day, one lap through the bank before any repeat. |

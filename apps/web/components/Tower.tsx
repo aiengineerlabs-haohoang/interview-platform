@@ -189,9 +189,17 @@ export function Tower() {
       {/* Overlay */}
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <header className="pointer-events-auto flex items-center gap-3 p-3 sm:p-4">
-          <button onClick={scene === "outside" ? undefined : scene === "lobby" ? leaveTower : leaveToLobby} className="paper rounded-full px-4 py-2 font-serif text-lg font-bold" aria-label={scene === "outside" ? "Interview Tower" : "Leave"}>
-            Interview Tower
-          </button>
+          {scene === "outside" ? (
+            <span className="paper rounded-full px-4 py-2 font-serif text-lg font-bold">Interview Tower</span>
+          ) : (
+            <button
+              onClick={scene === "lobby" ? leaveTower : leaveToLobby}
+              className="paper rounded-full px-4 py-2 font-serif text-lg font-bold"
+              aria-label={scene === "lobby" ? "Interview Tower: leave the tower" : "Interview Tower: back to the lobby"}
+            >
+              Interview Tower
+            </button>
+          )}
           <span className="paper rounded-full px-3 py-1.5 text-sm text-[var(--ink-2)]" data-testid="online">
             {online > 0 ? `${online} ${online === 1 ? "person" : "people"} inside` : "Quiet right now"}
           </span>

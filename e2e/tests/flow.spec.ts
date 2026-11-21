@@ -38,8 +38,8 @@ test("progress and the streak survive a reload, with no account", async ({ page 
   // The address still names the question, so a reload puts the visitor back in the same room.
   await expect(page.getByRole("textbox", { name: "Your answer" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("streak")).toHaveText(/1-day streak/);
-  await page.getByRole("button", { name: "Back to the lobby" }).click();
-  await expect(page.locator("[data-room=ml-fundamentals]")).toContainText("1/4 tried");
+  await page.getByRole("region", { name: "Interview" }).getByRole("button", { name: "Back to the lobby" }).click();
+  await expect(page.locator("[data-room=ml-fundamentals]")).toContainText(/1\/\d+ tried/);
 });
 
 test("a shared link opens that exact question", async ({ page }) => {

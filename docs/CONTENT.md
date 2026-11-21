@@ -2,17 +2,25 @@
 
 ## Review before promoting
 
-The 20 seed questions were drafted from general, well-established knowledge, with no invented figures. The only
-numbers are the "5-10x expected, 1.3x seen" in `prompt-cache-prefix` (from a published post) and arithmetic examples
-such as "one in a hundred". They are in the author's voice and **have not been through the fact-check agent**. Before a
-question is promoted on LinkedIn or Substack, run it through the same independent fact-check as a post.
+There are 56 questions in two groups, and **none has been through the independent fact-check agent**:
+
+- **20 hand-drafted** (`content/<room>.ts`) from general, well-established knowledge, with no invented figures. The only
+  numbers are "5-10x expected, 1.3x seen" in `prompt-cache-prefix` (from a published post) and arithmetic examples.
+- **36 converted** (`content/more/<room>.ts`) by one agent per floor from published newsletter posts and the
+  `shorts-studio/data/posts` files. The agents dropped nearly every figure and every named paper or system, and avoided
+  the specific claims that fact-check files had flagged. **Several source posts carry BLOCKED or NEEDS FIXES
+  fact-checks**, so "converted from a post" does not mean "verified". Two items the agents asked to have looked at:
+  `decode-latency-floor` keeps a source figure (about 16 GB, about 3.3 TB/s, near 5 ms per token for an 8B model), and
+  `clusters-need-an-outside-test` words "what the method produces" where a fact-check said the original overstated.
+
+Before any question is promoted on LinkedIn or Substack, run it through the same independent fact-check as a post.
 
 Questions must not name the source of an idea (a course, a university, a lecturer): `content.test.ts` fails the build
-if one does.
+if one does. Do not use a number a course notebook produced.
 
 ## A question
 
-`packages/shared/src/content/<room>.ts`, parsed by `QuestionSchema` in `types.ts`:
+`packages/shared/src/content/<room>.ts` or `content/more/<room>.ts`, parsed by `QuestionSchema` in `types.ts`:
 
 | field | what it is |
 |---|---|

@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**/*.md", "docs/**"]
+  pull_request:
+    paths-ignore: ["**/*.md", "docs/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Types, lint, unit and integration tests, build, production parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Types
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Tests (shared, API on workerd + D1, web, scripts)
+        run: npm test
+      - name: Build the static site
+        run: npm run build:web
+      - name: Production parity (real Worker config, assets, local D1)
+        run: bash scripts/prod-smoke.sh
+      - name: Worker bundle fits the free plan
+        working-directory: apps/api
+        run: |
+          D1_DATABASE_ID=00000000-0000-0000-0000-000000000000 SITE_URL=https://tower.example node ../../scripts/prod-config.mjs
+          npx wrangler deploy --dry-run --outdir /tmp/worker -c wrangler.production.jsonc
+
+  e2e:
+    name: End-to-end (Playwright, real browser, WebGL)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: Build the static site
+        run: npm run build:web
+      - name: Playwright
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
+  deploy:
+    name: Deploy
+    needs: [test, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ github.sha }}
+    secrets: inherit

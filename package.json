@@ -1,0 +1,28 @@
+{
+  "name": "interview-tower",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/shared",
+    "apps/api",
+    "apps/web",
+    "e2e"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present && node --test scripts/*.test.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "build:web": "npm run build -w @tower/web",
+    "serve:prod": "bash scripts/serve-prod.sh",
+    "e2e": "npm run e2e -w @tower/e2e",
+    "smoke:prod": "bash scripts/prod-smoke.sh",
+    "deploy": "bash scripts/deploy-local.sh"
+  },
+  "overrides": {
+    "vite": "^7.3.6",
+    "postcss": "^8.5.28",
+    "sharp": "^0.35.4"
+  }
+}

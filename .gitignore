@@ -1,0 +1,19 @@
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/api/.wrangler/
+apps/api/.dev.vars
+apps/api/wrangler.production.jsonc
+*.tsbuildinfo
+next-env.d.ts
+coverage/
+e2e/test-results/
+e2e/playwright-report/
+.env
+.env*.local
+.DS_Store
+*.pem
+.screenshots/
+# reference material from KB, not ours to publish
+plonk-process.zip
+process.html

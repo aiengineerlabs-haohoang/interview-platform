@@ -1,0 +1,40 @@
+{
+  "name": "@tower/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.8.2",
+    "@tower/shared": "*",
+    "clsx": "^2.1.1",
+    "next": "~15.5.25",
+    "react": "~19.1.9",
+    "react-dom": "~19.1.9",
+    "three": "^0.187.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.0",
+    "@types/react": "~19.1.13",
+    "@types/react-dom": "~19.1.9",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "~15.5.25",
+    "jsdom": "^26.1.0",
+    "sharp": "^0.35.4",
+    "tailwindcss": "^4.1.13",
+    "typescript": "~5.9.3",
+    "vitest": "~4.1.11"
+  }
+}

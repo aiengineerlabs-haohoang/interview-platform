@@ -47,6 +47,8 @@ test("two visitors see each other on campus", async ({ browser }) => {
   const a = await (await browser.newContext()).newPage();
   const b = await (await browser.newContext()).newPage();
   await openHome(a);
+  // Wait until the first visitor is registered, so the second one's first heartbeat is guaranteed to include them.
+  await expect(a.getByTestId("online")).toHaveText(/\d+ (person|people) on campus/, { timeout: 20_000 });
   await openHome(b);
   await expect(b.getByTestId("online")).toHaveText(/\d+ people on campus/, { timeout: 20_000 });
   const n = Number(((await b.getByTestId("online").textContent()) ?? "").match(/\d+/)?.[0]);

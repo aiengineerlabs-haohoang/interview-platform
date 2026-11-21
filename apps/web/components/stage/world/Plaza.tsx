@@ -4,6 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { RoomId } from "@tower/shared";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { signTexture, tex } from "./assets";
 import { input, useKeyboard } from "./controls";
 import { Human } from "./Human";
@@ -51,11 +52,11 @@ function Ground() {
     <group>
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <circleGeometry args={[300, 64]} />
-        <meshStandardMaterial map={grass} roughness={1} color="#d7e6c4" />
+        <meshStandardMaterial map={grass} roughness={1} color="#9fb384" />
       </mesh>
       <mesh rotation-x={-Math.PI / 2} position-y={0.02} receiveShadow>
         <circleGeometry args={[27, 96]} />
-        <meshStandardMaterial map={paving} roughness={0.85} polygonOffset polygonOffsetFactor={-1} />
+        <meshStandardMaterial map={paving} color="#c2bdb2" roughness={0.85} polygonOffset polygonOffsetFactor={-1} />
       </mesh>
       <mesh rotation-x={-Math.PI / 2} position-y={0.04} receiveShadow>
         <ringGeometry args={[5.4, 8.2, 96]} />
@@ -141,6 +142,38 @@ function Trees() {
   );
 }
 
+function Bushes() {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const leaves = useMemo(() => tex("leaves", { repeat: [1, 1] }), []);
+  const spots = useMemo(() => {
+    const r = rng(23);
+    const out: { x: number; z: number; s: number }[] = [];
+    for (let i = 0; i < 90; i++) {
+      const a = (i / 90) * Math.PI * 2 + r() * 0.05;
+      const rad = 28.3 + r() * 1.2;
+      const x = rad * Math.sin(a), z = rad * Math.cos(a);
+      if (TOWERS.some((t) => Math.hypot(t.porch[0] - x, t.porch[1] - z) < 7 || Math.hypot(t.x - x, t.z - z) < 10)) continue;
+      if (z > 8 && Math.abs(x) < 10) continue;
+      out.push({ x, z, s: 0.7 + r() * 0.6 });
+    }
+    return out;
+  }, []);
+  useLayoutEffect(() => {
+    const m = new THREE.Matrix4();
+    spots.forEach((b, i) => {
+      m.compose(new THREE.Vector3(b.x, 0.45 * b.s, b.z), new THREE.Quaternion(), new THREE.Vector3(b.s * 1.2, b.s * 0.9, b.s * 1.2));
+      ref.current?.setMatrixAt(i, m);
+    });
+    if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
+  }, [spots]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, spots.length]} castShadow>
+      <icosahedronGeometry args={[0.8, 2]} />
+      <meshStandardMaterial map={leaves} color="#b4d49a" roughness={0.95} />
+    </instancedMesh>
+  );
+}
+
 function Lamps() {
   return (
     <group>
@@ -201,6 +234,7 @@ function Tower({ t, inside }: { t: TowerSpot; inside: number }) {
   const stone = useMemo(() => tex("ground_paving", { repeat: [2, 1] }), []);
   const sign = useMemo(() => signTexture([{ text: `FLOOR ${t.floor}`, size: 46, weight: "600", color: "#fff1d6" }, { text: t.name, size: 92 }], t.color, 1024, 300), [t]);
   const count = useMemo(() => signTexture([{ text: inside > 0 ? `${inside} inside now` : "Open", size: 64, weight: "600" }], "#2a2018", 640, 120), [inside]);
+  const door = useMemo(() => tex("door"), []);
   const glow = useRef<THREE.Mesh>(null);
   const side = useMemo(() => new THREE.MeshStandardMaterial({ map: facade, roughness: 0.55, metalness: 0.15 }), [facade]);
   const roof = useMemo(() => new THREE.MeshStandardMaterial({ color: "#46403a", roughness: 0.9 }), []);
@@ -216,6 +250,19 @@ function Tower({ t, inside }: { t: TowerSpot; inside: number }) {
       <mesh position-y={TOWER_H / 2} material={[side, side, roof, roof, side, side]} castShadow receiveShadow>
         <boxGeometry args={[TOWER_W, TOWER_H, TOWER_W]} />
       </mesh>
+      {/* relief: a ledge at every few floors and slim pilasters up the corners, so the facade is not a flat card */}
+      {[6, 11, 16, 21].map((y) => (
+        <mesh key={y} position={[0, y, 0]} castShadow receiveShadow>
+          <boxGeometry args={[TOWER_W + 0.5, 0.3, TOWER_W + 0.5]} />
+          <meshStandardMaterial map={stone} roughness={0.8} />
+        </mesh>
+      ))}
+      {[-1, 1].flatMap((sx) => [-1, 1].map((sz) => (
+        <mesh key={`${sx}${sz}`} position={[sx * (TOWER_W / 2), TOWER_H / 2, sz * (TOWER_W / 2)]} castShadow>
+          <boxGeometry args={[0.5, TOWER_H, 0.5]} />
+          <meshStandardMaterial map={stone} roughness={0.8} />
+        </mesh>
+      )))}
       {/* plinth and crown */}
       <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
         <boxGeometry args={[TOWER_W + 0.8, 1.2, TOWER_W + 0.8]} />
@@ -240,13 +287,9 @@ function Tower({ t, inside }: { t: TowerSpot; inside: number }) {
           <boxGeometry args={[3.5, 4.2, 0.3]} />
           <meshStandardMaterial map={wood} color="#8a6a4a" roughness={0.6} />
         </mesh>
-        <mesh position={[0, 1.85, 0.3]}>
-          <planeGeometry args={[2.6, 3.6]} />
-          <meshBasicMaterial color="#ffdca4" toneMapped={false} />
-        </mesh>
-        <mesh position={[0, 1.85, 0.31]}>
-          <planeGeometry args={[0.07, 3.6]} />
-          <meshBasicMaterial color="#6b4d33" toneMapped={false} />
+        <mesh position={[0, 2.1, 0.3]}>
+          <planeGeometry args={[3.5, 4.2]} />
+          <meshBasicMaterial map={door} toneMapped={false} />
         </mesh>
         <mesh position={[0, 4.75, 1.5]} castShadow receiveShadow>
           <boxGeometry args={[6.4, 0.28, 3.4]} />
@@ -262,7 +305,7 @@ function Tower({ t, inside }: { t: TowerSpot; inside: number }) {
           <boxGeometry args={[6, 0.2, 3.2]} />
           <meshStandardMaterial map={stone} roughness={0.8} />
         </mesh>
-        <mesh position={[0, 6.6, 0.1]}>
+        <mesh position={[0, 7.4, 0.1]}>
           <planeGeometry args={[9, 2.65]} />
           <meshBasicMaterial map={sign} toneMapped={false} />
         </mesh>
@@ -454,8 +497,20 @@ function Walker({ model, startAt, active, onNear, onEnter, sun }: WalkerProps) {
 export function Plaza({ model, visitors, rooms, startAt, active, reduced, onNear, onEnter }: PlazaProps) {
   const sun = useRef<THREE.DirectionalLight>(null);
   const scene = useThree((s) => s.scene);
+  const gl = useThree((s) => s.gl);
   useEffect(() => {
-    scene.fog = new THREE.Fog(SKY_HORIZON, 60, 190);
+    const pm = new THREE.PMREMGenerator(gl);
+    const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    scene.environmentIntensity = 0.1;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pm.dispose();
+    };
+  }, [gl, scene]);
+  useEffect(() => {
+    scene.fog = new THREE.Fog(SKY_HORIZON, 45, 150);
     scene.background = new THREE.Color(SKY_HORIZON);
     return () => {
       scene.fog = null;
@@ -476,6 +531,7 @@ export function Plaza({ model, visitors, rooms, startAt, active, reduced, onNear
       <Fountain />
       <Trees />
       <Lamps />
+      <Bushes />
       <Benches />
       {TOWERS.map((t) => (
         <Tower key={t.id} t={t} inside={rooms[t.id] ?? 0} />

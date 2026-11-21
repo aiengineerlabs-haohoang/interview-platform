@@ -35,10 +35,14 @@ export function signTexture(lines: { text: string; size: number; weight?: string
   const total = lines.reduce((a, l) => a + l.size * 1.2, 0);
   let y = (h - total) / 2;
   for (const l of lines) {
-    g.font = `${l.weight ?? "700"} ${l.size}px Georgia, 'Times New Roman', serif`;
+    let size = l.size;
+    const font = (px: number) => `${l.weight ?? "700"} ${px}px Georgia, 'Times New Roman', serif`;
+    g.font = font(size);
+    while (g.measureText(l.text).width > w * 0.9 && size > 20) g.font = font((size -= 4)); // never clip a long name
+    g.font = font(size);
     g.fillStyle = l.color ?? "#fff8ec";
-    g.fillText(l.text, w / 2, y + l.size * 0.6);
-    y += l.size * 1.2;
+    g.fillText(l.text, w / 2, y + size * 0.6);
+    y += size * 1.2;
   }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;

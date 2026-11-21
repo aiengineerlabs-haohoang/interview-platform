@@ -1,26 +1,27 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import type { Avatar, Expression, RoomId } from "@tower/shared";
-import { Component, useEffect, type ReactNode } from "react";
-import { Lobby, type Visitor } from "./Lobby";
-import { Outside } from "./Outside";
-import { Room } from "./Room";
-import { preload } from "./sprites";
+import type { Expression, RoomId } from "@tower/shared";
+import { Component, type ReactNode } from "react";
+import * as THREE from "three";
+import { InterviewRoom } from "./world/InterviewRoom";
+import { Plaza, type Visitor } from "./world/Plaza";
+import { MODELS, type ModelId } from "./world/vrm";
 import type { SceneName } from "./support";
 
 export interface StageProps {
   scene: SceneName;
   roomId: RoomId | null;
+  roomColor: string;
   expression: Expression;
-  avatar: Avatar;
+  model: ModelId;
   visitors: Visitor[];
-  online: number;
+  rooms: Record<string, number>;
+  startAt: RoomId | null;
   reduced: boolean;
-  walkTo: RoomId | null;
-  onEnter: () => void;
-  onPickRoom: (id: RoomId) => void;
-  onWalkDone: (id: RoomId) => void;
+  controls: boolean;
+  onNear: (id: RoomId | null) => void;
+  onEnter: (id: RoomId) => void;
   onFailed: () => void;
 }
 
@@ -29,7 +30,8 @@ class Boundary extends Component<{ onError: () => void; children: ReactNode }, {
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  componentDidCatch() {
+  componentDidCatch(e: unknown) {
+    console.error("stage failed", e);
     this.props.onError();
   }
   render() {
@@ -37,18 +39,19 @@ class Boundary extends Component<{ onError: () => void; children: ReactNode }, {
   }
 }
 
-export default function Stage(p: StageProps) {
-  useEffect(() => {
-    preload(["interviewer/neutral", "interviewer/warm", "interviewer/thinking", "interviewer/confident", "interviewer/confused", `${p.avatar}/neutral`, `${p.avatar}/thinking`]);
-  }, [p.avatar]);
+/** The interviewer is always a different person from you. */
+export function interviewerFor(model: ModelId): ModelId {
+  return (["ren", "hana", "sakura", "kai"] as const).find((m) => m !== model) ?? MODELS[0];
+}
 
+export default function Stage(p: StageProps) {
   return (
     <Boundary onError={p.onFailed}>
       <Canvas
-        flat
+        shadows
         dpr={[1, 1.75]}
-        camera={{ fov: 52, near: 0.1, far: 120, position: [0, 2, 10] }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        camera={{ fov: 52, near: 0.1, far: 400, position: [0, 4, 25] }}
+        gl={{ antialias: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
         onCreated={({ gl }) => {
           gl.domElement.setAttribute("data-stage", "ready");
           gl.domElement.addEventListener("webglcontextlost", (e) => {
@@ -58,9 +61,8 @@ export default function Stage(p: StageProps) {
         }}
         aria-hidden
       >
-        {p.scene === "outside" && <Outside online={p.online} reduced={p.reduced} onEnter={p.onEnter} />}
-        {p.scene === "lobby" && <Lobby reduced={p.reduced} visitors={p.visitors} walkTo={p.walkTo} onPick={p.onPickRoom} onArrive={p.onWalkDone} />}
-        {p.scene === "room" && p.roomId && <Room roomId={p.roomId} expression={p.expression} avatar={p.avatar} reduced={p.reduced} />}
+        {p.scene === "plaza" && <Plaza model={p.model} visitors={p.visitors} rooms={p.rooms} startAt={p.startAt} active={p.controls} reduced={p.reduced} onNear={p.onNear} onEnter={p.onEnter} />}
+        {p.scene === "room" && p.roomId && <InterviewRoom model={p.model} interviewer={interviewerFor(p.model)} expression={p.expression} accent={p.roomColor} reduced={p.reduced} />}
       </Canvas>
     </Boundary>
   );

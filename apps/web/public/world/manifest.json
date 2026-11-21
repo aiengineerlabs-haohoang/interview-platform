@@ -1,0 +1,162 @@
+[
+  {
+    "file": "bark.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "furrowed bark (vertical grain)",
+    "bytes": 285952
+  },
+  {
+    "file": "carpet_grey.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "grey woollen textile weave",
+    "bytes": 329212
+  },
+  {
+    "file": "facade_brick.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "red brick, white windows",
+    "bytes": 201636
+  },
+  {
+    "file": "facade_concrete.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "board-formed concrete, deep window grid",
+    "bytes": 163072
+  },
+  {
+    "file": "facade_copper.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "weathered copper panels, dark strips",
+    "bytes": 162124
+  },
+  {
+    "file": "facade_glass.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "blue-grey curtain wall",
+    "bytes": 36542
+  },
+  {
+    "file": "facade_stone.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "cream limestone, tall windows",
+    "bytes": 111128
+  },
+  {
+    "file": "floor_wood.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "oak herringbone",
+    "bytes": 249780
+  },
+  {
+    "file": "ground_cobble.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "granite setts",
+    "bytes": 325892
+  },
+  {
+    "file": "ground_grass.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "short lawn",
+    "bytes": 348666
+  },
+  {
+    "file": "ground_paving.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "light grey slabs",
+    "bytes": 199852
+  },
+  {
+    "file": "leaves.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "foliage mass",
+    "bytes": 298764
+  },
+  {
+    "file": "poster_1.webp",
+    "width": 768,
+    "height": 1024,
+    "kind": "single",
+    "notes": "abstract watercolour, terracotta/sage",
+    "bytes": 75172
+  },
+  {
+    "file": "poster_2.webp",
+    "width": 768,
+    "height": 1024,
+    "kind": "single",
+    "notes": "abstract geometric, ochre/rose",
+    "bytes": 27330
+  },
+  {
+    "file": "poster_3.webp",
+    "width": 768,
+    "height": 1024,
+    "kind": "single",
+    "notes": "abstract color-field, terracotta/blue-grey",
+    "bytes": 194064
+  },
+  {
+    "file": "sky_panorama.webp",
+    "width": 2048,
+    "height": 1024,
+    "kind": "single",
+    "notes": "2:1 golden-hour sky, wraps horizontally (edge-blended)",
+    "bytes": 35974
+  },
+  {
+    "file": "table_wood.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "walnut long grain",
+    "bytes": 139438
+  },
+  {
+    "file": "wall_panel.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "dark walnut vertical boards",
+    "bytes": 73934
+  },
+  {
+    "file": "wall_plaster.webp",
+    "width": 1024,
+    "height": 1024,
+    "kind": "tile",
+    "notes": "warm off-white plaster",
+    "bytes": 41268
+  },
+  {
+    "file": "window_view.webp",
+    "width": 1536,
+    "height": 1024,
+    "kind": "single",
+    "notes": "sunset city skyline backdrop",
+    "bytes": 105862
+  }
+]

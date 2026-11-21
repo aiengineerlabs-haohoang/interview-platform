@@ -28,9 +28,22 @@ obvious from the code.
   accessible, testable and works with no WebGL. Never put an interaction only in the canvas.
 - **`<Canvas flat>`** turns tone mapping off. With the default (ACES) the whiteboard, which is a `MeshBasicMaterial`,
   rendered grey instead of the palette's cream.
-- **Characters are billboards, not models.** They are the watercolour sprites from `shorts-studio`, cropped by
-  `scripts/optimize-sprites.mjs`. Same cast as the Shorts, zero image-generation spend. Regenerate with that script,
-  which needs the shorts-studio `assets/characters` folder.
+- **Characters are real 3D humans: VRM models** (`apps/web/public/models/{a,b,c,d}.vrm`, loaded with `@pixiv/three-vrm`).
+  The four VRoid/pixiv sample models, licences "everyone / commercial use / modification allowed". Their textures are
+  recompressed to 1024px webp (4.5 MB each, down from 15). They are made *chibi* at load time by scaling raw bones
+  (`CHIBI` in `stage/world/vrm.ts`). Animation is procedural on the normalised humanoid bones, no clips. VRM 0 and VRM 1
+  disagree on bone axes once loaded, so `calibrate()` measures the sign of "forward" and "arm down" per model. One model
+  can be in one place at a time: the interviewer is always a different model from the player.
+- **The environment is built from Gemini-generated textures** in `apps/web/public/world/` (facades, paving, wood, sky,
+  window view, posters; see `manifest.json`). Geometry is plain three.js boxes and cylinders: the realism is the
+  photographic texture plus warm directional light and shadows. Texture access is `tex(name)`, which returns at once and
+  fills in when the file arrives, so a missing file degrades to a flat colour instead of breaking the scene.
+- **The campus is walkable.** Arrow keys / WASD move the avatar, Shift runs, Q/E turn the camera, Enter or Space uses a
+  door; a touch stick does the same on phones. `layout.ts` holds the map and the collision (`resolve`); the e2e tests
+  steer the avatar by reading `data-player` on the canvas. Every tower is also reachable from the "All towers" list, so
+  nothing depends on being able to walk.
+- **Accounts are username + password**, PBKDF2 in the Worker, an HttpOnly session cookie, D1 tables `users` and
+  `sessions`. Guests still play; signing in moves their anonymous attempts onto the account.
 - **`webglAvailable()` lives in `stage/support.ts`**, not `Stage.tsx`, so the front page does not download three.js
   just to ask whether it can draw.
 - **The camera uses `setViewOffset`** to slide the picture clear of the overlay panel (left on a wide screen, up on a
@@ -41,6 +54,7 @@ obvious from the code.
   disagrees with its own model answer fails the build.
 - **Attempts are one per visitor per question per UTC day** (primary key), so the "you beat 75%" figure cannot be
   stuffed by hammering submit.
+- **Accounts are optional.** A signed-in player's rows use the identity `u:<user id>` in the same `attempts`/`presence` tables (anonymous ids have no colon, so they cannot collide). The server picks the identity from the session cookie, ignoring the body's `anonId`; register/login with an `anonId` moves that visitor's attempts across and deletes the anonymous rows so stats do not double count.
 - **Anonymous ids never leave the server's tables**: `/api/presence` returns avatars and rooms, never an id.
 - The API's SITE_URL is only used to allow same-origin `Origin` headers; the request's own origin is always allowed.
 

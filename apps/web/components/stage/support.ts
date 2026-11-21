@@ -1,4 +1,4 @@
-export type SceneName = "outside" | "lobby" | "room";
+export type SceneName = "plaza" | "room";
 
 /** True when the browser can make a WebGL context at all. Kept apart from Stage so the page does not load three.js to ask. */
 export function webglAvailable(): boolean {

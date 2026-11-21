@@ -25,6 +25,10 @@ check "unknown API routes are JSON 404s" '[ "$(status $BASE/api/nope)" = 404 ]'
 check "presence round-trips through D1" 'curl -s -X POST -H "content-type: application/json" -d "{\"anonId\":\"$ANON\",\"room\":\"agents\",\"avatar\":\"owl\"}" $BASE/api/presence | grep -q "\"online\":1"'
 check "an attempt is recorded" 'curl -s -X POST -H "content-type: application/json" -d "{\"anonId\":\"$ANON\",\"questionId\":\"prompt-cache-prefix\",\"score\":70,\"seconds\":30}" $BASE/api/attempts | grep -q "\"attempts\":1"'
 check "a cross-site post is refused" '[ "$(status -X POST -H "content-type: application/json" -H "origin: https://evil.example" -d "{}" $BASE/api/presence)" = 403 ]'
+JAR="$(mktemp)"
+check "migration 0002 is applied: an account registers and /me knows it" 'curl -s -c "$JAR" -X POST -H "content-type: application/json" -d "{\"username\":\"smoke_user\",\"password\":\"smoke-password-1\",\"anonId\":\"$ANON\"}" $BASE/api/auth/register | grep -q "\"username\":\"smoke_user\"" && curl -s -b "$JAR" $BASE/api/auth/me | grep -q "smoke_user"'
+check "the session cookie is HttpOnly" 'grep -q "#HttpOnly_.*tower_session" "$JAR"'
+rm -f "$JAR"
 check "the daily question is served" 'curl -s $BASE/api/daily | grep -q "questionId"'
 
 if [ "$fails" -gt 0 ]; then echo "$fails check(s) failed"; tail -30 "$LOG"; exit 1; fi

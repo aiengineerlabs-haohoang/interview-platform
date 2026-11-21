@@ -60,6 +60,11 @@ into a custom-domain route and sets `SITE_URL` from it. No data moves.
 `apps/api/migrations/` is additive and numbered upwards. Migrations run **before** the new code goes out, so for a
 moment the old code runs against the new schema: add columns and tables, never rename or drop in the same release.
 
+`0002_accounts.sql` (users, sessions) needs no extra step: `wrangler d1 migrations apply` applies every numbered file, in
+the Deploy workflow, in `scripts/deploy-local.sh` and in `scripts/serve-prod.sh` (so CI's smoke test and e2e run against
+it; `scripts/prod-smoke.sh` registers an account to prove it). Passwords use PBKDF2-SHA256 at 100,000 iterations, the
+most Workers allows. Sessions are cookies only (`Secure` over https), so there is no secret to configure.
+
 ## Rolling back
 
 `cd apps/api && npx wrangler rollback -c wrangler.production.jsonc` returns the Worker and its assets to the previous

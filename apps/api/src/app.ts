@@ -1,7 +1,8 @@
 import { AttemptInputSchema, PresenceInputSchema, QUESTIONS, ROOM_IDS, dailyQuestion, dayKey, questionById } from "@tower/shared";
 import { Hono } from "hono";
+import { identityOf, registerAuthRoutes, sessionUser, type AppEnv } from "./auth";
 import { defaultDeps, type Deps } from "./deps";
-import type { Env } from "./env";
+import { err, parseBody } from "./http";
 
 /** A visitor who has not checked in for this long is gone. The page beats every 20s. */
 export const PRESENCE_WINDOW_MS = 60_000;
@@ -9,15 +10,9 @@ export const PRESENCE_WINDOW_MS = 60_000;
 const PRESENCE_PRUNE_MS = 5 * 60_000;
 const VISITORS_SHOWN = 12;
 
-type Vars = { deps: Deps };
-
-function err(code: string, message: string, extra: Record<string, unknown> = {}) {
-  return { error: { code, message, ...extra } };
-}
-
 export function createApp(overrides: Partial<Deps> = {}) {
   const deps: Deps = { ...defaultDeps, ...overrides };
-  const app = new Hono<{ Bindings: Env; Variables: Vars }>().basePath("/api");
+  const app = new Hono<AppEnv>().basePath("/api");
 
   app.use("*", async (c, next) => {
     const id = deps.requestId();
@@ -28,9 +23,9 @@ export function createApp(overrides: Partial<Deps> = {}) {
     c.res.headers.set("cache-control", "no-store");
   });
 
-  // Writes are JSON only, from our own origin. A cross-site form cannot send application/json without a preflight.
+  // Writes (POST, PUT) are JSON only, from our own origin. A cross-site form cannot send application/json without a preflight.
   app.use("*", async (c, next) => {
-    if (c.req.method === "POST") {
+    if (c.req.method !== "GET" && c.req.method !== "HEAD" && c.req.method !== "OPTIONS") {
       const origin = c.req.header("origin");
       if (origin) {
         const ours = new Set([new URL(c.req.url).origin, new URL(c.env.SITE_URL).origin]);
@@ -64,12 +59,21 @@ export function createApp(overrides: Partial<Deps> = {}) {
     return { online, rooms: perRoom, visitors };
   }
 
+  /** The signed-in account's identity when a valid session cookie is present, otherwise the anonymous id the client sent. */
+  async function identity(c: Parameters<typeof sessionUser>[0], anonId: string): Promise<string> {
+    const user = await sessionUser(c);
+    return user ? identityOf(user.id) : anonId;
+  }
+
+  registerAuthRoutes(app);
+
   app.get("/presence", async (c) => c.json(await readPresence(c.env.DB, deps.now())));
 
   app.post("/presence", async (c) => {
     const parsed = await parseBody(c.req.raw, PresenceInputSchema);
     if (!parsed.ok) return c.json(parsed.body, 400);
-    const { anonId, room, avatar } = parsed.data;
+    const { room, avatar } = parsed.data;
+    const anonId = await identity(c, parsed.data.anonId);
     const now = deps.now();
     await c.env.DB.batch([
       c.env.DB.prepare(
@@ -88,13 +92,20 @@ export function createApp(overrides: Partial<Deps> = {}) {
   app.get("/stats/:id", async (c) => {
     const id = c.req.param("id");
     if (!questionById(id)) return c.json(err("not_found", "No such question."), 404);
-    return c.json(await statsFor(c.env.DB, id));
+    const user = await sessionUser(c);
+    const anon = c.req.query("anonId");
+    const who = user ? identityOf(user.id) : anon && /^[a-z0-9-]{8,64}$/.test(anon) ? anon : null;
+    const mine = who
+      ? await c.env.DB.prepare("SELECT score, day FROM attempts WHERE anon_id = ? AND question_id = ? ORDER BY day DESC LIMIT 1").bind(who, id).first<{ score: number; day: string }>()
+      : null;
+    return c.json({ ...(await statsFor(c.env.DB, id)), ...(who ? { mine: mine ?? null } : {}) });
   });
 
   app.post("/attempts", async (c) => {
     const parsed = await parseBody(c.req.raw, AttemptInputSchema);
     if (!parsed.ok) return c.json(parsed.body, 400);
-    const { anonId, questionId, score, seconds } = parsed.data;
+    const { questionId, score, seconds } = parsed.data;
+    const anonId = await identity(c, parsed.data.anonId);
     if (!questionById(questionId)) return c.json(err("not_found", "No such question."), 404);
     const now = deps.now();
     const day = dayKey(new Date(now));
@@ -127,20 +138,4 @@ export function createApp(overrides: Partial<Deps> = {}) {
   });
 
   return app;
-}
-
-type Parsed<T> = { ok: true; data: T } | { ok: false; body: ReturnType<typeof err> };
-
-async function parseBody<T>(req: Request, schema: { safeParse: (v: unknown) => { success: true; data: T } | { success: false; error: { issues: { path: PropertyKey[]; message: string }[] } } }): Promise<Parsed<T>> {
-  let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    return { ok: false, body: err("invalid_body", "The body is not valid JSON.") };
-  }
-  const r = schema.safeParse(raw);
-  if (!r.success) {
-    return { ok: false, body: err("invalid_body", "The body does not match.", { issues: r.error.issues.map((i) => `${i.path.map(String).join(".")}: ${i.message}`) }) };
-  }
-  return { ok: true, data: r.data };
 }

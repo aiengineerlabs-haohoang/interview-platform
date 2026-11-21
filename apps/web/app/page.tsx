@@ -1,9 +1,14 @@
+"use client";
+
 import { Tower } from "@/components/Tower";
+import { AuthProvider } from "@/lib/auth";
 
 export default function Home() {
   return (
     <main className="fixed inset-0">
-      <Tower />
+      <AuthProvider>
+        <Tower />
+      </AuthProvider>
     </main>
   );
 }

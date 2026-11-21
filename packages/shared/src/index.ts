@@ -5,3 +5,4 @@ export * from "./scoring";
 export * from "./daily";
 export * from "./anon";
 export { QUESTIONS, questionById, questionsInRoom } from "./questions";
+export * from "./auth";

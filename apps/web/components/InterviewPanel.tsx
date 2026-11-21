@@ -177,7 +177,7 @@ export function InterviewPanel({ question, onResult, onExpression, onNext, onLea
               Show me the answer
             </button>
             <button type="button" onClick={onLeave} className="ml-auto px-3 py-2.5 text-sm text-[var(--ink-3)] underline-offset-2 hover:underline">
-              Back to the lobby
+              Leave the room
             </button>
           </div>
         </div>
@@ -250,7 +250,7 @@ export function InterviewPanel({ question, onResult, onExpression, onNext, onLea
               </button>
             )}
             <button type="button" onClick={onLeave} className="rounded-full border border-[var(--line)] px-5 py-2.5 text-[var(--ink-2)] hover:bg-[var(--tint)]">
-              Back to the lobby
+              Leave the room
             </button>
           </div>
         </div>

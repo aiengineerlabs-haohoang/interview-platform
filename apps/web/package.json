@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@pixiv/three-vrm": "^3.5.5",
     "@react-three/fiber": "^9.8.2",
     "@tower/shared": "*",
     "clsx": "^2.1.1",

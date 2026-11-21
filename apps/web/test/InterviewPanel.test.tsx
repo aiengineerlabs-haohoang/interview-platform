@@ -81,7 +81,7 @@ describe("InterviewPanel", () => {
     await user.click(screen.getByRole("button", { name: /show me the answer/i }));
     await user.click(screen.getByRole("button", { name: /next question/i }));
     expect(onNext).toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: /back to the lobby/i }));
+    await user.click(screen.getByRole("button", { name: /leave the room/i }));
     expect(onLeave).toHaveBeenCalled();
   });
 

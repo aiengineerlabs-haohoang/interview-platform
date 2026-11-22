@@ -22,10 +22,14 @@ test("the avatar walks under the arrow keys and stops when they are released", a
   await page.keyboard.down("ArrowUp");
   await expect.poll(async () => (await playerAt(page))[1], { timeout: 15_000 }).toBeLessThan(z0 - 3);
   await page.keyboard.up("ArrowUp");
-  await page.waitForTimeout(700);
-  const [, z1] = await playerAt(page);
-  await page.waitForTimeout(700);
-  expect((await playerAt(page))[1]).toBeCloseTo(z1, 0);
+  // It coasts to a stop; how long that takes depends on the frame rate, so wait until two samples agree.
+  await expect
+    .poll(async () => {
+      const a = (await playerAt(page))[1];
+      await page.waitForTimeout(1500);
+      return Math.abs((await playerAt(page))[1] - a);
+    }, { timeout: 30_000 })
+    .toBeLessThan(0.05);
   expect(Math.abs((await playerAt(page))[0] - x0)).toBeLessThan(1);
 });
 

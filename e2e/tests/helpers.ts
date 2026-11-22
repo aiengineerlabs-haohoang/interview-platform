@@ -33,7 +33,12 @@ export async function playerAt(page: Page): Promise<[number, number]> {
  * few frames a second, so a fixed key-hold time would be a coin toss). Camera yaw is 0, so Up is -z and Right is +x.
  */
 export async function walkTo(page: Page, x: number, z: number, within = 1.0) {
-  await page.keyboard.down("Shift");
+  let running = false;
+  const setRun = async (on: boolean) => {
+    if (on === running) return;
+    running = on;
+    await (on ? page.keyboard.down("Shift") : page.keyboard.up("Shift"));
+  };
   try {
     for (let i = 0; i < 400; i++) {
       const [px, pz] = await playerAt(page);
@@ -42,15 +47,25 @@ export async function walkTo(page: Page, x: number, z: number, within = 1.0) {
         continue;
       }
       const dx = x - px, dz = z - pz;
-      if (Math.hypot(dx, dz) < within) return;
+      const dist = Math.hypot(dx, dz);
+      // A slow frame (software rendering) covers several metres, so near the mark walk instead of run and accept a wider miss.
+      if (dist < Math.max(within, 2.2)) return;
+      await setRun(dist > 10);
       const keys = [Math.abs(dx) > 0.5 ? (dx > 0 ? "ArrowRight" : "ArrowLeft") : "", Math.abs(dz) > 0.5 ? (dz > 0 ? "ArrowDown" : "ArrowUp") : ""].filter(Boolean);
       for (const k of keys) await page.keyboard.down(k);
       await page.waitForTimeout(140);
       for (const k of keys) await page.keyboard.up(k);
+      // Let it coast to a stop before judging where it is: at a few frames a second the glide is several metres.
+      for (let j = 0; j < 12; j++) {
+        const [ax, az] = await playerAt(page);
+        await page.waitForTimeout(450);
+        const [bx, bz] = await playerAt(page);
+        if (Math.hypot(bx - ax, bz - az) < 0.05) break;
+      }
     }
     throw new Error(`never reached ${x},${z}; ended at ${(await playerAt(page)).join(",")}`);
   } finally {
-    await page.keyboard.up("Shift");
+    await setRun(false);
   }
 }
 

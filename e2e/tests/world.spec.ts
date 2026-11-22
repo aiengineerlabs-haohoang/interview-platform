@@ -15,6 +15,7 @@ test("the 3D campus actually draws something, outside and in the interview room"
 });
 
 test("the avatar walks under the arrow keys and stops when they are released", async ({ page }) => {
+  test.slow(); // software rendering draws a few frames a second; walking is as slow as the frames
   await startExploring(page);
   await expect.poll(async () => (await playerAt(page))[0], { timeout: 20_000 }).not.toBeNaN();
   const [x0, z0] = await playerAt(page);
@@ -29,11 +30,12 @@ test("the avatar walks under the arrow keys and stops when they are released", a
 });
 
 test("a tower wall stops you instead of letting you walk through it", async ({ page }) => {
+  test.slow(); // software rendering draws a few frames a second; walking is as slow as the frames
   await startExploring(page);
   // Straight at the ML Fundamentals tower, past the porch: the wall is 6.5m from its centre.
   await walkTo(page, 6.5, 12, 1.5);
   await walkTo(page, 6.5, -20, 1.5);
-  await walkTo(page, 0, -20, 1.5);
+  await walkTo(page, 0, -20, 3.5); // a slow frame covers several metres, so be generous
   await page.keyboard.down("Shift");
   await page.keyboard.down("ArrowUp");
   await page.waitForTimeout(6000);

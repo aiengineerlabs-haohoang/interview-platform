@@ -6,8 +6,8 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { CameraRig } from "../CameraRig";
 import { tex } from "./assets";
-import { rng } from "./layout";
 import { Human } from "./Human";
+import { Prop } from "./Prop";
 import { newAnimState, setEmote, type ModelId } from "./vrm";
 
 export interface InterviewRoomProps {
@@ -120,27 +120,10 @@ function Shell({ accent }: { accent: string }) {
 }
 
 function Furniture() {
-  const wood = useMemo(() => tex("table_wood", { repeat: [1.4, 1] }), []);
-  const leaves = useMemo(() => tex("leaves", { repeat: [1, 1] }), []);
   const dark = <meshStandardMaterial color="#2b231d" roughness={0.5} metalness={0.2} />;
-  const books = useMemo(() => {
-    const r = rng(5);
-    const cols = ["#a8483a", "#3f6f8f", "#4d7a52", "#c9a24b", "#6c4f8c", "#d8cdb8", "#8a5a3c"];
-    return Array.from({ length: 4 * 11 }, (_, i) => ({ shelf: Math.floor(i / 11), x: (i % 11) * 0.092 - 0.46, h: 0.22 + r() * 0.12, c: cols[Math.floor(r() * cols.length)]! }));
-  }, []);
   return (
     <group>
-      {/* table */}
-      <mesh position={[0, 0.72, -0.05]} castShadow receiveShadow>
-        <boxGeometry args={[2.7, 0.07, 1.15]} />
-        <meshStandardMaterial map={wood} roughness={0.35} />
-      </mesh>
-      {[-1.2, 1.2].flatMap((x) => [-0.45, 0.45].map((z) => (
-        <mesh key={`${x}${z}`} position={[x, 0.36, -0.05 + z]} castShadow>
-          <boxGeometry args={[0.07, 0.72, 0.07]} />
-          {dark}
-        </mesh>
-      )))}
+      <Prop name="dtable" position={[0, 0, -0.05]} height={0.74} />
       {/* interviewer's laptop and notebook */}
       <group position={[-0.45, 0.755, -0.4]} rotation-y={0.1}>
         <mesh castShadow><boxGeometry args={[0.36, 0.015, 0.25]} />{dark}</mesh>
@@ -173,63 +156,16 @@ function Furniture() {
         </mesh>
       ))}
       {/* chairs */}
-      {[{ z: -1.4, ry: 0, back: true }, { z: 1.3, ry: Math.PI, back: false }].map((c) => (
-        <group key={c.z} position={[0, 0, c.z]} rotation-y={c.ry}>
-          <mesh position={[0, SEAT, 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.62, 0.07, 0.6]} />
-            <meshStandardMaterial color="#2f3b4a" roughness={0.8} />
-          </mesh>
-          {c.back && (
-            <mesh position={[0, 0.78, -0.3]} rotation-x={-0.06} castShadow>
-              <boxGeometry args={[0.6, 0.7, 0.07]} />
-              <meshStandardMaterial color="#2f3b4a" roughness={0.8} />
-            </mesh>
-          )}
-          <mesh position={[0, SEAT / 2, 0]} castShadow>
-            <cylinderGeometry args={[0.04, 0.04, SEAT, 10]} />
-            {dark}
-          </mesh>
-          <mesh position={[0, 0.03, 0]}>
-            <cylinderGeometry args={[0.32, 0.32, 0.04, 5]} />
-            {dark}
-          </mesh>
-        </group>
-      ))}
-      {/* bookshelf on the right wall */}
-      <group position={[5.5 - 0.22, 0, -1.2]} rotation-y={-Math.PI / 2}>
-        <mesh position={[0, 1.1, 0]} castShadow>
-          <boxGeometry args={[1.1, 2.2, 0.36]} />
-          <meshStandardMaterial map={wood} roughness={0.6} />
-        </mesh>
-        {[0, 1, 2, 3].map((s) => (
-          <group key={s} position={[0, 0.28 + s * 0.52, 0.02]}>
-            <mesh position={[0, -0.02, 0.01]}><boxGeometry args={[1.0, 0.03, 0.34]} />{dark}</mesh>
-            {books.filter((b) => b.shelf === s).map((b, i) => (
-              <mesh key={i} position={[b.x + 0.04, b.h / 2, 0.02]}>
-                <boxGeometry args={[0.07, b.h, 0.22]} />
-                <meshStandardMaterial color={b.c} roughness={0.7} />
-              </mesh>
-            ))}
-          </group>
-        ))}
-      </group>
-      {/* a plant */}
-      <group position={[4.7, 0, -3.7]}>
-        <mesh position-y={0.3} castShadow>
-          <cylinderGeometry args={[0.3, 0.22, 0.6, 20]} />
-          <meshStandardMaterial color="#c9b9a0" roughness={0.8} />
-        </mesh>
-        {[[0, 1.1, 0, 0.5], [0.25, 1.5, 0.1, 0.4], [-0.22, 1.35, -0.12, 0.42], [0.05, 1.8, -0.05, 0.34]].map(([x, y, z, r], i) => (
-          <mesh key={i} position={[x!, y!, z!]} castShadow>
-            <icosahedronGeometry args={[r!, 2]} />
-            <meshStandardMaterial map={leaves} color="#bfe0a0" roughness={0.9} />
-          </mesh>
-        ))}
-        <mesh position-y={0.75} castShadow>
-          <cylinderGeometry args={[0.04, 0.05, 0.9, 8]} />
-          <meshStandardMaterial color="#6b4d33" />
-        </mesh>
-      </group>
+      <Prop name="chair2" position={[0, 0, -1.4]} height={0.86} />
+      <Prop name="chair2" position={[0, 0, 1.3]} rotationY={Math.PI} height={0.86} />
+      <Prop name="bookshelf" position={[5.5 - 0.32, 0, -1.2]} rotationY={-Math.PI / 2} height={2.1} />
+      <Prop name="display" position={[-4.7, 0, -4.1]} height={1.6} />
+      <Prop name="plant" position={[4.7, 0, -3.7]} height={1.6} />
+      <Prop name="clock" position={[3.4, 2.75, -D / 2 + 0.02]} height={0.55} shadows={false} />
+      <Prop name="mirror" position={[4.5, 1.75, -D / 2 + 0.02]} height={1.0} shadows={false} />
+      <Prop name="teaset" position={[-0.55, 0.74, 0.18]} width={0.5} />
+      <Prop name="stationery" position={[0.85, 0.74, 0.12]} rotationY={0.4} scale={1.6} />
+      <Prop name="frame" position={[0.95, 0.74, -0.42]} rotationY={-0.5} height={0.22} />
       {/* floor lamp */}
       <group position={[-4.5, 0, -3.5]}>
         <mesh position-y={0.8}><cylinderGeometry args={[0.025, 0.025, 1.6, 8]} />{dark}</mesh>

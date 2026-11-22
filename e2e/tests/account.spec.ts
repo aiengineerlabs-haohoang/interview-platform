@@ -28,6 +28,7 @@ test("a visitor creates an account in the page, stays signed in after a reload, 
 });
 
 test("a wrong password says so and keeps the dialog open", async ({ page }) => {
+  test.slow();
   await startExploring(page);
   await page.getByRole("button", { name: "Sign in" }).click();
   const dialog = page.getByRole("dialog");

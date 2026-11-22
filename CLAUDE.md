@@ -26,18 +26,24 @@ obvious from the code.
   dies with `Cannot read properties of null (reading 'edgesOut')`, which looks like a corrupt cache and is not.
 - **The 3D stage is decoration over a real DOM.** Every interaction is a button or a textbox, so the product is
   accessible, testable and works with no WebGL. Never put an interaction only in the canvas.
-- **`<Canvas flat>`** turns tone mapping off. With the default (ACES) the whiteboard, which is a `MeshBasicMaterial`,
-  rendered grey instead of the palette's cream.
 - **Characters are real 3D humans: VRM models** (`apps/web/public/models/{a,b,c,d}.vrm`, loaded with `@pixiv/three-vrm`).
   The four VRoid/pixiv sample models, licences "everyone / commercial use / modification allowed". Their textures are
   recompressed to 1024px webp (4.5 MB each, down from 15). They are made *chibi* at load time by scaling raw bones
   (`CHIBI` in `stage/world/vrm.ts`). Animation is procedural on the normalised humanoid bones, no clips. VRM 0 and VRM 1
   disagree on bone axes once loaded, so `calibrate()` measures the sign of "forward" and "arm down" per model. One model
   can be in one place at a time: the interviewer is always a different model from the player.
-- **The environment is built from Gemini-generated textures** in `apps/web/public/world/` (facades, paving, wood, sky,
-  window view, posters; see `manifest.json`). Geometry is plain three.js boxes and cylinders: the realism is the
-  photographic texture plus warm directional light and shadows. Texture access is `tex(name)`, which returns at once and
-  fills in when the file arrives, so a missing file degrades to a flat colour instead of breaking the scene.
+- **The environment is real 3D props plus Gemini-generated textures.** `apps/web/public/props/*.glb` are CC0 Poly Haven
+  models (trees, street lamps, bench, picnic table, urban facades for the horizon, and the room's table, chairs,
+  bookshelf, plants, clock, mirror, tea set), decimated and webp-compressed with gltf-transform (the originals are
+  millions of triangles). Trees keep a random subset of whole leaf clusters, scaled up, because simplifying leaf cards
+  deletes the foliage. Props load through `stage/world/Prop.tsx` (`<Prop name height|width />`, a missing file just leaves a
+  gap). The towers, ground and room shell are boxes and planes wearing Gemini textures in `public/world/` (see
+  `manifest.json`), read through `tex(name)`.
+- **Post-processing lives in `Stage.tsx` (`Finish`)**: N8AO (desktop only), bloom, vignette and ACES tone mapping as the
+  last effect. Software renderers (SwiftShader, llvmpipe: what headless CI uses) skip it, drop the horizon, shrubs and half
+  the trees (`low` prop) and tone-map in the renderer instead; they would otherwise draw one frame a second.
+- **Walking does not depend on frame rate**: a slow frame moves you the true distance, in collision steps of at most 50 ms.
+  The e2e walking tests are `test.slow()` and generous about overshoot for that reason.
 - **The campus is walkable.** Arrow keys / WASD move the avatar, Shift runs, Q/E turn the camera, Enter or Space uses a
   door; a touch stick does the same on phones. `layout.ts` holds the map and the collision (`resolve`); the e2e tests
   steer the avatar by reading `data-player` on the canvas. Every tower is also reachable from the "All towers" list, so

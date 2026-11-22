@@ -12,9 +12,12 @@
   "dependencies": {
     "@pixiv/three-vrm": "^3.5.5",
     "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
     "@tower/shared": "*",
     "clsx": "^2.1.1",
+    "n8ao": "^2.1.0",
     "next": "~15.5.25",
+    "postprocessing": "^6.39.6",
     "react": "~19.1.9",
     "react-dom": "~19.1.9",
     "three": "^0.187.0",

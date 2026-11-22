@@ -8,7 +8,8 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { signTexture, tex } from "./assets";
 import { input, useKeyboard } from "./controls";
 import { Human } from "./Human";
-import { BENCHES, FOUNTAIN, LAMPS, TOWER_H, TOWER_W, TOWERS, TREES, resolve, rng, type TowerSpot } from "./layout";
+import { Prop } from "./Prop";
+import { BENCHES, FOUNTAIN, LAMPS, PICNICS, TOWER_H, TOWER_W, TOWERS, TREES, resolve, rng, type TowerSpot } from "./layout";
 import { MODELS, modelForAvatar, newAnimState, type ModelId } from "./vrm";
 
 export interface Visitor {
@@ -17,6 +18,8 @@ export interface Visitor {
 }
 
 export interface PlazaProps {
+  /** Software rendering: skip the heavy scenery so the walk stays responsive. */
+  low: boolean;
   model: ModelId;
   visitors: Visitor[];
   rooms: Record<string, number>;
@@ -110,34 +113,16 @@ function Fountain() {
   );
 }
 
-function Trees() {
-  const trunk = useRef<THREE.InstancedMesh>(null);
-  const crown = useRef<THREE.InstancedMesh>(null);
-  const bark = useMemo(() => tex("bark", { repeat: [1, 2] }), []);
-  const leaves = useMemo(() => tex("leaves", { repeat: [2, 2] }), []);
-  useLayoutEffect(() => {
-    const r = rng(11);
-    const m = new THREE.Matrix4();
-    TREES.forEach((t, i) => {
-      const s = 0.8 + r() * 0.7;
-      m.compose(new THREE.Vector3(t.x, 2.2 * s, t.z), new THREE.Quaternion(), new THREE.Vector3(s, s, s));
-      trunk.current?.setMatrixAt(i, m);
-      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, r() * 6, 0));
-      m.compose(new THREE.Vector3(t.x, 5.6 * s, t.z), q, new THREE.Vector3(s * (1 + r() * 0.3), s * (0.9 + r() * 0.3), s * (1 + r() * 0.3)));
-      crown.current?.setMatrixAt(i, m);
-    });
-    for (const ref of [trunk, crown]) if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
-  }, []);
+function Trees({ low }: { low: boolean }) {
   return (
     <group>
-      <instancedMesh ref={trunk} args={[undefined, undefined, TREES.length]} castShadow>
-        <cylinderGeometry args={[0.28, 0.45, 4.4, 10]} />
-        <meshStandardMaterial map={bark} roughness={1} />
-      </instancedMesh>
-      <instancedMesh ref={crown} args={[undefined, undefined, TREES.length]} castShadow>
-        <icosahedronGeometry args={[2.9, 2]} />
-        <meshStandardMaterial map={leaves} roughness={0.95} color="#cfe6b0" />
-      </instancedMesh>
+      {TREES.map((t, i) => {
+        if (low && i % 2) return null;
+        const r = rng(100 + i);
+        const near = !low && Math.hypot(t.x, t.z) < 42;
+        const name = `t0${(i % 3) + 1}_${near ? "hi" : "lo"}`;
+        return <Prop key={i} name={name} position={[t.x, 0, t.z]} rotationY={r() * 6.28} height={7 + r() * 3} shadows={near} />;
+      })}
     </group>
   );
 }
@@ -179,15 +164,8 @@ function Lamps() {
     <group>
       {LAMPS.map((l, i) => (
         <group key={i} position={[l.x, 0, l.z]}>
-          <mesh position-y={2.1} castShadow>
-            <cylinderGeometry args={[0.07, 0.11, 4.2, 8]} />
-            <meshStandardMaterial color="#2c2a28" roughness={0.5} metalness={0.6} />
-          </mesh>
-          <mesh position-y={4.3}>
-            <sphereGeometry args={[0.32, 16, 12]} />
-            <meshBasicMaterial color="#ffd9a0" toneMapped={false} />
-          </mesh>
-          <pointLight position-y={4.2} color="#ffc98a" intensity={7} distance={11} decay={2} />
+          <Prop name="lamp" height={4.4} rotationY={Math.atan2(-l.x, -l.z)} />
+          <pointLight position-y={4} color="#ffc98a" intensity={7} distance={11} decay={2} />
         </group>
       ))}
     </group>
@@ -195,27 +173,45 @@ function Lamps() {
 }
 
 function Benches() {
-  const wood = useMemo(() => tex("table_wood", { repeat: [1, 1] }), []);
   return (
     <group>
       {BENCHES.map((b, i) => (
-        <group key={i} position={[b.x, 0, b.z]} rotation-y={b.rot}>
-          <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
-            <boxGeometry args={[2.2, 0.09, 0.62]} />
-            <meshStandardMaterial map={wood} roughness={0.7} />
-          </mesh>
-          <mesh position={[0, 0.88, -0.28]} rotation-x={-0.12} castShadow>
-            <boxGeometry args={[2.2, 0.5, 0.07]} />
-            <meshStandardMaterial map={wood} roughness={0.7} />
-          </mesh>
-          {[-0.95, 0.95].map((x) => (
-            <mesh key={x} position={[x, 0.25, 0]} castShadow>
-              <boxGeometry args={[0.09, 0.5, 0.55]} />
-              <meshStandardMaterial color="#2c2a28" metalness={0.6} roughness={0.5} />
-            </mesh>
-          ))}
-        </group>
+        <Prop key={i} name="bench" position={[b.x, 0, b.z]} rotationY={b.rot} width={2.2} />
       ))}
+    </group>
+  );
+}
+
+/** Picnic tables, stones and ground-cover shrubs: the clutter that makes a place look lived in. */
+function Dressing({ low }: { low: boolean }) {
+  const shrubs = useMemo(() => {
+    const r = rng(41);
+    return Array.from({ length: 28 }, (_, i) => {
+      const a = r() * Math.PI * 2, rad = 8 + r() * 46;
+      return { x: rad * Math.sin(a), z: rad * Math.cos(a), rot: r() * 6.28, s: 1 + r() * 0.8, name: i % 2 ? "shrub" : "shrub2" };
+    }).filter((p) => !TOWERS.some((t) => Math.hypot(t.x - p.x, t.z - p.z) < 11) && Math.hypot(p.x, p.z) > FOUNTAIN.r + 2 && !(p.z > 6 && Math.abs(p.x) < 6));
+  }, []);
+  return (
+    <group>
+      {PICNICS.map((p, i) => (
+        <Prop key={i} name="picnic" position={[p.x, 0, p.z]} rotationY={p.rot} width={2.4} />
+      ))}
+      {!low && shrubs.map((p, i) => (
+        <Prop key={i} name={p.name} position={[p.x, 0, p.z]} rotationY={p.rot} scale={p.s} shadows={false} />
+      ))}
+    </group>
+  );
+}
+
+/** A ring of city blocks beyond the trees, so the plaza has a horizon of real buildings instead of fog. */
+function Backdrop() {
+  const n = 8, rad = 64;
+  return (
+    <group>
+      {Array.from({ length: n }, (_, i) => {
+        const a = ((i + 0.5) / n) * Math.PI * 2;
+        return <Prop key={i} name="facade" position={[rad * Math.sin(a), 0, rad * Math.cos(a)]} rotationY={a + Math.PI} width={46} shadows={false} />;
+      })}
     </group>
   );
 }
@@ -428,7 +424,8 @@ function Walker({ model, startAt, active, onNear, onEnter, sun }: WalkerProps) {
 
   useFrame(({ camera }, dtRaw) => {
     const s = st.current;
-    const dt = Math.min(dtRaw, 0.05);
+    // A slow frame still moves you the real distance (walking speed must not depend on the frame rate), in steps small enough for collisions.
+    const dt = Math.min(dtRaw, 0.3);
     s.yaw += input.turn * dt * 1.8;
     const ix = active ? input.kx + input.tx : 0;
     const iy = active ? input.ky + input.ty : 0;
@@ -438,11 +435,15 @@ function Walker({ model, startAt, active, onNear, onEnter, sun }: WalkerProps) {
     const speed = (input.run ? 9 : 5.2) * mag;
     const dx = f[0]! * iy + r[0]! * ix, dz = f[1]! * iy + r[1]! * ix;
     const len = Math.hypot(dx, dz);
-    const k = 1 - Math.exp(-dt * 12);
-    s.vx += (len > 0.01 ? (dx / len) * speed - s.vx : -s.vx) * k;
-    s.vz += (len > 0.01 ? (dz / len) * speed - s.vz : -s.vz) * k;
+    const steps = Math.max(1, Math.ceil(dt / 0.05));
+    const sub = dt / steps;
+    const k = 1 - Math.exp(-sub * 12);
+    for (let i = 0; i < steps; i++) {
+      s.vx += (len > 0.01 ? (dx / len) * speed - s.vx : -s.vx) * k;
+      s.vz += (len > 0.01 ? (dz / len) * speed - s.vz : -s.vz) * k;
+      [s.x, s.z] = resolve(s.x + s.vx * sub, s.z + s.vz * sub);
+    }
     const sp = Math.hypot(s.vx, s.vz);
-    [s.x, s.z] = resolve(s.x + s.vx * dt, s.z + s.vz * dt);
     if (sp > 0.25) {
       const want = Math.atan2(s.vx, s.vz);
       let diff = want - s.heading;
@@ -494,7 +495,7 @@ function Walker({ model, startAt, active, onNear, onEnter, sun }: WalkerProps) {
   return <Human model={model} anim={anim} group={g} />;
 }
 
-export function Plaza({ model, visitors, rooms, startAt, active, reduced, onNear, onEnter }: PlazaProps) {
+export function Plaza({ low, model, visitors, rooms, startAt, active, reduced, onNear, onEnter }: PlazaProps) {
   const sun = useRef<THREE.DirectionalLight>(null);
   const scene = useThree((s) => s.scene);
   const gl = useThree((s) => s.gl);
@@ -529,10 +530,12 @@ export function Plaza({ model, visitors, rooms, startAt, active, reduced, onNear
       <Sky />
       <Ground />
       <Fountain />
-      <Trees />
+      <Trees low={low} />
       <Lamps />
       <Bushes />
       <Benches />
+      <Dressing low={low} />
+      {!low && <Backdrop />}
       {TOWERS.map((t) => (
         <Tower key={t.id} t={t} inside={rooms[t.id] ?? 0} />
       ))}

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { answerAndSubmit, openHome, startExploring, walkToMlFundamentals } from "./helpers";
 
 test("a visitor walks to a tower with the arrow keys, goes in, answers, and sees the verdict, the trap and the senior answer", async ({ page }) => {
+  test.slow(); // software rendering draws a few frames a second; walking is as slow as the frames
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 

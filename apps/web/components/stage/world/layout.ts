@@ -53,7 +53,7 @@ export const TREES: Circle[] = (() => {
   let guard = 0;
   while (out.length < 46 && guard++ < 800) {
     const ang = r() * Math.PI * 2;
-    const rad = 28 + r() * 48;
+    const rad = 28 + r() * 28;
     const x = rad * Math.sin(ang);
     const z = rad * Math.cos(ang);
     if (TOWERS.some((t) => Math.hypot(t.x - x, t.z - z) < 13)) continue;
@@ -70,6 +70,11 @@ export const LAMPS: Circle[] = Array.from({ length: 10 }, (_, i) => {
 }).filter((l) => !TOWERS.some((t) => Math.hypot(t.x - l.x, t.z - l.z) < 12) && !(l.z > 8 && Math.abs(l.x) < 9));
 
 export const BENCHES = [0.5, 1.9, 3.2, 4.4, 5.6].map((a) => ({ x: 9.5 * Math.sin(a), z: 9.5 * Math.cos(a), rot: a + Math.PI }));
+
+export const PICNICS = [
+  { x: -15, z: 13, rot: 0.6, r: 1.5 },
+  { x: 16, z: 11, rot: -0.5, r: 1.5 },
+];
 
 export const WORLD_RADIUS = 70;
 
@@ -89,7 +94,7 @@ export function resolve(x: number, z: number, pr = 0.45): [number, number] {
       z = t.z - nx * s + nz * c;
     }
   }
-  for (const o of [FOUNTAIN, ...TREES, ...LAMPS]) {
+  for (const o of [FOUNTAIN, ...TREES, ...LAMPS, ...PICNICS]) {
     const dx = x - o.x, dz = z - o.z;
     const d = Math.hypot(dx, dz);
     const min = o.r + pr;
